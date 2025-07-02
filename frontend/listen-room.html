@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Silent Listening – Mute Talk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #1e2b3a, #0e1c26);
+      color: #ffffffcc;
+      margin: 0;
+      padding: 2rem 1rem 6rem;
+    }
+
+    .whisper-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-left: 4px solid #87ceeb;
+      margin-bottom: 1rem;
+      border-radius: 0.75rem;
+      position: relative;
+    }
+
+    .whisper-mood {
+      font-size: 0.8rem;
+      color: #ccc;
+      margin-bottom: 0.4rem;
+    }
+
+    .presence-bar {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .presence-btn {
+      background: rgba(255,255,255,0.1);
+      color: #eee;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .presence-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.05);
+    }
+
+    .fade-in {
+      animation: fadeUp 0.7s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .audio-toggle {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: #ffffff1a;
+      color: #eee;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="text-xl font-semibold mb-4 text-center">💗 Silent Listening</h1>
+  <p class="text-center text-sm mb-6 text-white/60">No one talks back here. You are the presence, not the echo.</p>
+
+  <div id="whisperList"></div>
+
+  <!-- 🌬️ Wind Canvas -->
+  <canvas id="windCanvas" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1;"></canvas>
+
+  <!-- 🎼 Ambient Audio -->
+  <button class="audio-toggle" onclick="toggleAudio()">🌊 Audio</button>
+  <audio id="ambience" loop src="assets/soft-sea.mp3" preload="auto"></audio>
+
+  <script>
+    let refreshTimer;
+
+    async function loadWhispers() {
+      try {
+        const res = await fetch("/getWhispers");
+        const data = await res.json();
+        const list = document.getElementById("whisperList");
+        list.innerHTML = "";
+
+        data.reverse().slice(0, 50).forEach((w, i) => {
+          const card = document.createElement("div");
+          card.className = "whisper-card fade-in";
+          card.style.animationDelay = (i * 0.1) + "s";
+
+          if (w.mood) {
+            const mood = document.createElement("div");
+            mood.className = "whisper-mood";
+            mood.textContent = `🌀 Mood: ${w.mood}`;
+            card.appendChild(mood);
+          }
+
+          const content = document.createElement("div");
+          content.textContent = w.message || "(blank whisper)";
+          card.appendChild(content);
+
+          const bar = document.createElement("div");
+          bar.className = "presence-bar";
+
+          ["👂 Listening", "🫂 I’m here", "🌸 Feeling this", "✨ Stay gentle"].forEach(txt => {
+            const btn = document.createElement("button");
+            btn.textContent = txt;
+            btn.className = "presence-btn";
+            btn.onclick = () => {
+              btn.textContent = "💖 Sent";
+              btn.disabled = true;
+              btn.style.opacity = 0.6;
+              btn.style.background = "rgba(255,255,255,0.15)";
+              btn.style.transform = "scale(1.1)";
+
+              const chime = new Audio("assets/soft-chime.mp3");
+              chime.volume = 0.2;
+              chime.play();
+
+              setTimeout(() => {
+                btn.style.transform = "scale(1)";
+              }, 300);
+            };
+            bar.appendChild(btn);
+          });
+
+          card.appendChild(bar);
+          list.appendChild(card);
+        });
+      } catch (e) {
+        document.getElementById("whisperList").innerHTML =
+          "<p class='text-center text-red-400'>Could not load whispers 🫧</p>";
+      }
+    }
+
+    function initWind() {
+      const canvas = document.getElementById("windCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = Array.from({ length: 40 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: 0.3 + Math.random() * 0.4,
+        vy: 0.1 + Math.random() * 0.2,
+        size: 0.8 + Math.random() * 1.2,
+        opacity: 0.05 + Math.random() * 0.1
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
+          ctx.fill();
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x > canvas.width) p.x = -10;
+          if (p.y > canvas.height) p.y = -10;
+        });
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+
+    function toggleAudio() {
+      const audio = document.getElementById("ambience");
+      if (audio.paused) {
+        audio.play();
+      } else {
+        audio.pause();
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadWhispers();
+      initWind();
+      const ambience = document.getElementById("ambience");
+      ambience.volume = 0.2;
+      ambience.play();
+
+      refreshTimer = setInterval(loadWhispers, 15000);
+    });
+
+    window.addEventListener("resize", () => {
+      const canvas = document.getElementById("windCanvas");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>

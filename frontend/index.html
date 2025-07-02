@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mute Talk | Sea of Feelings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --day-bg: linear-gradient(to bottom, #a8dadc, #457b9d);
+      --night-bg: linear-gradient(to bottom, #1d1e2c, #16202a);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      transition: background 1s;
+    }
+
+    body[data-theme="day"] {
+      --bg: var(--day-bg);
+    }
+
+    body[data-theme="night"] {
+      --bg: var(--night-bg);
+    }
+
+    canvas#windCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .wave-bg {
+      position: absolute;
+      width: 300%;
+      height: 100%;
+      background: url('https://i.imgur.com/R1zjOtU.png') repeat-x;
+      background-size: contain;
+      animation: waveScroll 40s linear infinite;
+      opacity: 0.15;
+      z-index: 1;
+    }
+
+    @keyframes waveScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-66.66%); }
+    }
+
+    .bottle-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+    }
+
+    .bottle-svg {
+      position: absolute;
+      width: 80px;
+      height: 130px;
+      opacity: 0.7;
+      transform-origin: center;
+      transition: transform 0.3s, opacity 0.4s;
+    }
+
+    .bottle-svg:hover {
+      transform: scale(1.2) translateY(-6px);
+      opacity: 1;
+      z-index: 99;
+    }
+
+    .bottle-text {
+      position: absolute;
+      width: 80px;
+      top: 40px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: transparent;
+      pointer-events: none;
+      transition: color 0.3s ease;
+    }
+
+    .bottle-svg:hover + .bottle-text {
+      color: #ffffff;
+    }
+
+    .ripple {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      animation: rippleFade 2s ease-out forwards;
+      z-index: 0;
+    }
+
+    @keyframes rippleFade {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    #soundToggle {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      z-index: 50;
+    }
+
+    #identityBar {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    @media (max-width: 768px) {
+      .bottle-text { font-size: 0.75rem; }
+      .bottle-svg { width: 60px; height: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+  <script>
+    const nickname = localStorage.getItem("mute_nickname");
+    const pass = localStorage.getItem("mute_pass");
+    if (!nickname || !pass) {
+      window.location.href = "auth.html";
+    }
+  </script>
+
+  <div id="identityBar" class="fixed top-3 left-4 z-50 text-black px-3 py-1 rounded-full shadow text-sm flex items-center space-x-3">
+    <span id="displayName">Hello, friend.</span>
+    <button onclick="logout()" class="text-xs text-blue-600 underline hover:text-blue-800">logout</button>
+  </div>
+
+  <canvas id="windCanvas"></canvas>
+  <div class="wave-bg"></div>
+  <div class="bottle-container" id="bottleZone"></div>
+  <button id="soundToggle" class="bg-white text-black px-3 py-1 rounded shadow hover:bg-gray-100 transition">
+    🔊 Whisper Sound
+  </button>
+
+  <svg style="display: none;">
+    <symbol id="bottleShape" viewBox="0 0 64 128" preserveAspectRatio="xMidYMid meet">
+      <g fill="none" stroke="white" stroke-width="1.5">
+        <path d="M32 5 L32 25" stroke-linecap="round" />
+        <path d="M24 25 L24 40 C24 45, 24 45, 22 50 L22 110 C22 115, 42 115, 42 110 L42 50 C40 45, 40 45, 40 40 L40 25 L24 25 Z"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.5)" />
+      </g>
+    </symbol>
+  </svg>
+
+  <script>
+    function detectTheme() {
+      const hour = new Date().getHours();
+      const isNight = hour >= 18 || hour < 6;
+      document.body.setAttribute("data-theme", isNight ? "night" : "day");
+    }
+
+    detectTheme();
+
+    const soundBtn = document.getElementById("soundToggle");
+    function setupSoundToggle() {
+      const enabled = localStorage.getItem("whisperSound") === "true";
+      soundBtn.textContent = enabled ? "🔊 Whisper Sound" : "🔇 Sound Off";
+      soundBtn.onclick = () => {
+        const now = localStorage.getItem("whisperSound") !== "true";
+        localStorage.setItem("whisperSound", now.toString());
+        soundBtn.textContent = now ? "🔊 Whisper Sound" : "🔇 Sound Off";
+      };
+    }
+
+    setupSoundToggle();
+
+    const name = localStorage.getItem("mute_nickname");
+    const display = document.getElementById("displayName");
+    if (name && display) {
+      display.textContent = `🌱 Welcome, ${name}`;
+    }
+
+    function logout() {
+      localStorage.removeItem("mute_nickname");
+      localStorage.removeItem("mute_pass");
+      window.location.href = "auth.html";
+    }
+
+    async function loadWhispers() {
+      try {
+        const res = await fetch("/getWhispers");
+        const data = await res.json();
+        data.forEach((msg, i) => {
+          setTimeout(() => dropBottle(msg.message), i * 700);
+        });
+      } catch (e) {
+        console.error("Error fetching whispers", e);
+      }
+    }
+
+    const zone = document.getElementById("bottleZone");
+    function dropBottle(text) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 64 128");
+      svg.classList.add("bottle-svg");
+
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#bottleShape");
+      svg.appendChild(use);
+
+      const label = document.createElement("div");
+      label.className = "bottle-text";
+      label.textContent = text;
+      label.title = text;
+
+      const x = -100;
+      const y = Math.random() * (window.innerHeight - 160);
+      const duration = 35 + Math.random() * 10;
+      const start = Date.now();
+      const amplitude = 10 + Math.random() * 10;
+      const freq = 0.005 + Math.random() * 0.01;
+
+      svg.style.left = x + "px";
+      svg.style.top = y + "px";
+      label.style.left = x + "px";
+      label.style.top = y + "px";
+
+      zone.appendChild(svg);
+      zone.appendChild(label);
+
+      if (localStorage.getItem("whisperSound") === "true") {
+        const audio = new Audio("assets/whisper.mp3");
+        audio.volume = 0.3;
+        audio.play();
+      }
+
+      function animate() {
+        const now = Date.now();
+        const elapsed = (now - start) / 1000;
+        const newX = x + elapsed * 30;
+        const offsetY = y + Math.sin(elapsed / freq) * amplitude;
+
+        svg.style.left = newX + "px";
+        svg.style.top = offsetY + "px";
+        label.style.left = newX + "px";
+        label.style.top = offsetY + "px";
+
+        if (newX > window.innerWidth + 200) {
+          svg.remove();
+          label.remove();
+          return;
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      const ripple = document.createElement("div");
+      ripple.className = "ripple";
+      ripple.style.top = `${y + 40}px`;
+      ripple.style.left = `50px`;
+      zone.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 2000);
+    }
+
+    const windCanvas = document.getElementById("windCanvas");
+    const ctx = windCanvas.getContext("2d");
+    windCanvas.width = window.innerWidth;
+    windCanvas.height = window.innerHeight;
+
+    let windParticles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * windCanvas.width,
+      y: Math.random() * windCanvas.height,
+      vx: 0.3 + Math.random() * 0.5,
+      vy: 0.1 + Math.random() * 0.4,
+      size: 0.8 + Math.random() * 1.5,
+      opacity: 0.1 + Math.random() * 0.2
+    }));
+
+    function animateWind() {
+      ctx.clearRect(0, 0, windCanvas.width, windCanvas.height);
+      windParticles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x > windCanvas.width) p.x = -10;
+        if (p.y > windCanvas.height) p.y = -10;
+      });
+      requestAnimationFrame(animateWind);
+    }
+
+    window.addEventListener("resize", () => {
+      windCanvas.width = window.innerWidth;
+      windCanvas.height = window.innerHeight;
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadWhispers();
+      animateWind();
+    });
+  </script>
+</body>
+</html>

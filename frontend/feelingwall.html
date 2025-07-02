@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Feeling Wall | Mute Talk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Handlee&family=Gloock&display=swap');
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #232939, #1a1e2a);
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #wall {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+    }
+
+    .title-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      text-align: center;
+    }
+
+    .graffiti {
+      font-family: 'Gloock', serif;
+      font-size: 3.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(to right, #ffffff, #90e0ef);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 12px rgba(255,255,255,0.15);
+    }
+
+    .subtext {
+      font-family: 'Handlee', cursive;
+      font-size: 1.2rem;
+      color: #dcdcdc;
+      opacity: 0.7;
+      margin-top: 0.4rem;
+    }
+
+    .note, .bubble, .foggy, .carousel-msg {
+      position: absolute;
+      min-width: 150px;
+      min-height: 80px;
+      background: #fefefe;
+      color: #222;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .note {
+      animation: floatIn 1.2s ease-out forwards, bob 5s ease-in-out infinite;
+    }
+
+    .note:hover {
+      z-index: 10;
+      transform: scale(1.05) rotate(var(--angle));
+    }
+
+    .meta {
+      font-size: 0.75rem;
+      margin-top: 10px;
+      opacity: 0;
+      color: #555;
+      font-style: italic;
+      transition: opacity 0.3s ease;
+    }
+
+    .note:hover .meta {
+      opacity: 1;
+    }
+
+    @keyframes floatIn {
+      from { transform: translateY(40px) scale(0.85); opacity: 0; }
+      to   { transform: rotate(var(--angle)) scale(1); opacity: 1; }
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: rotate(var(--angle)) translateY(0); }
+      50%      { transform: rotate(var(--angle)) translateY(-4px); }
+    }
+
+    .foggy {
+      animation: fogFade 8s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    @keyframes fogFade {
+      0%   { opacity: 0; transform: scale(0.9); }
+      10%  { opacity: 1; transform: scale(1); }
+      90%  { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.1); }
+    }
+
+    .carousel-msg {
+      position: fixed !important;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      background: #ffffffee;
+      color: #111;
+      width: 80%;
+      max-width: 500px;
+      text-align: center;
+      font-size: 1.3rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.25);
+    }
+
+    .bubble {
+      background: rgba(255, 255, 255, 0.15);
+      color: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      padding: 20px;
+      font-size: 0.9rem;
+      text-align: center;
+      transition: transform 0.3s ease, color 0.3s ease;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      animation: floatBubble 12s ease-in-out infinite;
+    }
+
+    .bubble:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.2) translateY(-10px);
+      color: #fff;
+    }
+
+    @keyframes floatBubble {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @media (max-width: 768px) {
+      .graffiti { font-size: 2.5rem; }
+      .note, .bubble, .foggy { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Title -->
+  <div class="title-container">
+    <div class="graffiti">Mute Talk</div>
+    <div class="subtext">a place to feel, quietly</div>
+  </div>
+
+  <!-- View Toggle & Auto Mode -->
+  <div class="fixed top-4 right-4 z-50 flex gap-2">
+    <select id="viewToggle" class="bg-white text-black px-2 py-1 rounded shadow">
+      <option value="wall">🧱 Wall</option>
+      <option value="bottle">🫧 Bottle</option>
+      <option value="fog">🌫️ Memory Fog</option>
+      <option value="carousel">💬 Carousel</option>
+    </select>
+    <button id="autoToggle" class="bg-indigo-600 text-white px-3 py-1 rounded shadow hover:bg-indigo-500 transition">
+      🔁 Auto
+    </button>
+  </div>
+
+  <div id="wall"></div>
+
+  <script>
+    const wall = document.getElementById('wall');
+    const views = ['wall', 'bottle', 'fog', 'carousel'];
+    let currentView = localStorage.getItem('selectedView') || 'wall';
+    let autoMode = localStorage.getItem('autoMode') === 'true';
+    let carouselIndex = 0;
+    let carouselTimer = null;
+
+    async function loadWhispers() {
+      try {
+        const res = await fetch('/getWhispers');
+        const data = await res.json();
+        renderView(currentView, data);
+      } catch (e) {
+        console.error("Error loading whispers", e);
+      }
+    }
+
+    function renderView(mode, data) {
+      wall.innerHTML = '';
+      clearInterval(carouselTimer);
+      if (mode === 'wall') {
+        data.forEach(dropNote);
+      } else if (mode === 'bottle') {
+        data.forEach((item, i) => dropBubble(item, i));
+      } else if (mode === 'fog') {
+        data.forEach(dropFog);
+      } else if (mode === 'carousel') {
+        if (data.length > 0) {
+          showCarousel(data);
+          carouselTimer = setInterval(() => {
+            carouselIndex = (carouselIndex + 1) % data.length;
+            showCarousel(data);
+          }, 7000);
+        }
+      }
+    }
+
+    function dropNote(data) {
+      const el = document.createElement('div');
+      el.className = 'note';
+      const angle = `${Math.floor(Math.random() * 10 - 5)}deg`;
+      el.style.setProperty('--angle', angle);
+      el.style.left = Math.random() * (window.innerWidth - 180) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 120) + 'px';
+      el.innerHTML = `
+        ${data.message}
+        <div class="meta">${data.mood || ''} · ${data.nickname || ''}</div>
+      `;
+      wall.appendChild(el);
+    }
+
+    function dropBubble(data, i) {
+      const el = document.createElement('div');
+      el.className = 'bubble';
+      el.style.left = Math.random() * (window.innerWidth - 150) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 150) + 'px';
+      el.textContent = data.message;
+      el.title = data.message;
+      el.style.animationDuration = `${12 + (i % 4)}s`;
+      wall.appendChild(el);
+    }
+
+    function dropFog(data) {
+      const el = document.createElement('div');
+      el.className = 'foggy';
+      el.style.left = Math.random() * (window.innerWidth - 200) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 130) + 'px';
+      el.textContent = data.message;
+      el.title = data.message;
+      wall.appendChild(el);
+    }
+
+    function showCarousel(data) {
+      wall.innerHTML = '';
+      const el = document.createElement('div');
+      el.className = 'carousel-msg';
+      el.textContent = data[carouselIndex].message;
+      el.title = data[carouselIndex].message;
+      wall.appendChild(el);
+    }
+
+    document.getElementById('viewToggle').addEventListener('change', e => {
+      currentView = e.target.value;
+      autoMode = false;
+      localStorage.setItem('selectedView', currentView);
+      localStorage.setItem('autoMode', 'false');
+      loadWhispers();
+    });
+
+    document.getElementById('autoToggle').addEventListener('click', () => {
+      autoMode = !autoMode;
+      localStorage.setItem('autoMode', autoMode.toString());
+      if (autoMode) {
+        const random = views[Math.floor(Math.random() * views.length)];
+        currentView = random;
+        localStorage.setItem('selectedView', random);
+        document.getElementById('viewToggle').value = random;
+      }
+      loadWhispers();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (autoMode) {
+        const random = views[Math.floor(Math.random() * views.length)];
+        currentView = random;
+        localStorage.setItem('selectedView', random);
+      }
+      document.getElementById('viewToggle').value = currentView;
+      loadWhispers();
+    });
+  </script>
+</body>
+</html>

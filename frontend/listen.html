@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choose Listener Mode | Mute Talk</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #0D1B2A;
+      color: #EAEAEA;
+      animation: fadeIn 1.2s ease-out;
+      overflow: hidden;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .pulse-hover:hover {
+      animation: pulse 0.6s ease-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    canvas#particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      background: transparent;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="font-sans min-h-screen flex flex-col items-center justify-center px-6 relative">
+
+  <canvas id="particles"></canvas>
+
+  <!-- Night Mode Toggle -->
+  <button id="themeToggle" class="fixed bottom-4 right-4 bg-white text-black px-3 py-1 rounded-full shadow z-50">
+    🌙
+  </button>
+
+  <!-- Back to Home -->
+  <button onclick="window.location.href='/'" class="fixed top-4 left-4 bg-white text-black px-3 py-1 rounded shadow z-50">
+    ⬅️ Home
+  </button>
+
+  <header class="text-center mb-6 z-10">
+    <h1 class="text-3xl font-semibold mb-2">Listener Setup</h1>
+    <p class="text-md opacity-70">Choose how you'll be present — no fixing, just warmth and care.</p>
+  </header>
+
+  <p class="mt-4 text-xl italic text-gray-300 z-10">
+    You're showing up as:
+    <span id="nickname" class="font-semibold text-white"></span>
+    <button onclick="refreshNickname()" class="ml-4 text-sm underline text-indigo-400 hover:text-indigo-200 transition">Change my vibe</button>
+  </p>
+
+  <main class="flex flex-col sm:flex-row gap-6 mt-6 z-10">
+    <button class="pulse-hover px-6 py-3 text-teal-400 border-2 border-teal-400 bg-transparent rounded-md
+                   hover:bg-indigo-600 hover:text-white transition-all duration-300 ease-out">
+      Warm Listener
+    </button>
+    <button class="pulse-hover px-6 py-3 text-teal-400 border-2 border-teal-400 bg-transparent rounded-md
+                   hover:bg-indigo-600 hover:text-white transition-all duration-300 ease-out">
+      Silent Listener
+    </button>
+  </main>
+
+  <footer class="mt-10 text-sm text-gray-400 opacity-60 z-10">
+    <p>&copy; 2025 Mute Talk</p>
+  </footer>
+
+  <script>
+    // 🌿 Nickname Generator
+    function generateNickname() {
+      const emojis = ['🌿', '🫧', '🌸', '🕊️', '🌙', '💮', '🦋', '🍃', '✨', '🌻'];
+      const adjectives = ['Quiet', 'Gentle', 'Calm', 'Warm', 'Soft', 'Kind', 'Brave', 'Shy', 'Still', 'Tender'];
+      const nouns = ['River', 'Voice', 'Cloud', 'Fox', 'Flame', 'Petal', 'Wind', 'Whisper', 'Rain', 'Echo'];
+      const e = emojis[Math.floor(Math.random() * emojis.length)];
+      const a = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const n = nouns[Math.floor(Math.random() * nouns.length)];
+      return `${e} ${a}${n}`;
+    }
+    function refreshNickname() {
+      document.getElementById('nickname').textContent = generateNickname();
+    }
+
+    // 🌗 Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    function applyTheme(dark) {
+      document.body.classList.toggle('dark', dark);
+      document.body.classList.toggle('light', !dark);
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+      themeToggle.textContent = dark ? '☀️' : '🌙';
+    }
+    themeToggle.onclick = () => applyTheme(!document.body.classList.contains('dark'));
+
+    // 🍃 Particle Background
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const modes = ['dots', 'glimmers', 'bubbles'];
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+    let particles = [];
+
+    function Particle(x, y) {
+      this.x = x;
+      this.y = y;
+      this.size = Math.random() * 3 + 1;
+      this.speedX = Math.random() * 1.5 - 0.75;
+      this.speedY = Math.random() * 1.5 - 0.75;
+      this.opacity = Math.random() * 0.4 + 0.3;
+    }
+    Particle.prototype.update = function () {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      this.opacity -= 0.004;
+    };
+    Particle.prototype.draw = function () {
+      if (mode === 'bubbles') {
+        ctx.strokeStyle = `rgba(255,255,255,${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (mode === 'glimmers') {
+        ctx.fillStyle = `rgba(173,216,230,${this.opacity})`;
+        ctx.fillRect(this.x, this.y, 1.2, 1.2);
+      } else {
+        ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    };
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.opacity > 0);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    window.addEventListener('mousemove', e => {
+      particles.push(new Particle(e.clientX, e.clientY));
+    });
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // INIT
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshNickname();
+      applyTheme(localStorage.getItem('theme') === 'dark');
+      animateParticles();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!-- feeling.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>How Are You Feeling | Mute Talk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #0D1B2A;
+      color: #EAEAEA;
+      animation: fadeIn 1.2s ease-out;
+      overflow: hidden;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .pulse-hover:hover {
+      animation: pulse 0.6s ease-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    canvas#particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .confetti {
+      position: absolute;
+      font-size: 1.5rem;
+      animation: fall 2.2s linear forwards;
+      opacity: 0.9;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="font-sans flex flex-col items-center justify-center px-6 py-10 relative">
+
+  <canvas id="particles"></canvas>
+
+  <button onclick="location.href='/'" class="fixed top-4 left-4 bg-white text-black px-3 py-1 rounded shadow z-50">⬅️ Home</button>
+  <button id="themeToggle" class="fixed bottom-4 right-4 bg-white text-black px-3 py-1 rounded-full shadow z-50">🌙</button>
+
+  <h1 class="text-3xl font-semibold mb-2 z-10">How are you feeling today?</h1>
+  <p class="text-md opacity-70 mb-4 z-10">Choose a mood or write it out — everything is welcome.</p>
+
+  <p class="text-xl italic text-gray-300 z-10">
+    You’re sharing as:
+    <span id="nickname" class="font-semibold text-white"></span>
+    <button onclick="refreshNickname()" class="ml-4 text-sm underline text-indigo-400 hover:text-indigo-200 transition">Change nickname</button>
+  </p>
+
+  <div class="flex flex-wrap justify-center gap-4 mt-6 z-10">
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">😢</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">😡</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">😌</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">🥺</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">😶</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">🫣</button>
+    <button class="emoji-button text-3xl pulse-hover hover:scale-110 transition">🥳</button>
+  </div>
+
+  <div class="mt-8 w-full max-w-md z-10">
+    <textarea placeholder="Type your feeling here..."
+      class="w-full px-4 py-3 rounded-lg bg-[#1C2A3A] text-white placeholder-gray-400 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+      rows="3"></textarea>
+    <button id="sendWhisper" class="mt-4 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded shadow-lg transition">
+      Send Whisper
+    </button>
+  </div>
+
+  <div id="confetti-container" class="pointer-events-none fixed inset-0 z-50"></div>
+
+  <footer class="mt-10 text-sm text-gray-400 opacity-60 z-10">
+    <p>&copy; 2025 Mute Talk</p>
+  </footer>
+
+  <script>
+    let selectedMood = null;
+
+    function generateNickname() {
+      const emojis = ['🌿','🫧','🌸','🕊️','🌙','💮','🦋','🍃','✨','🌻'];
+      const adjectives = ['Quiet','Gentle','Calm','Warm','Soft','Kind','Brave','Shy','Still','Tender'];
+      const nouns = ['River','Voice','Cloud','Fox','Flame','Petal','Wind','Whisper','Rain','Echo'];
+      return `${emojis[Math.floor(Math.random() * emojis.length)]} ${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}`;
+    }
+
+    function refreshNickname() {
+      document.getElementById('nickname').textContent = generateNickname();
+    }
+
+    const themeToggle = document.getElementById('themeToggle');
+    function applyTheme(dark) {
+      document.body.classList.toggle('dark', dark);
+      document.body.classList.toggle('light', !dark);
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+      themeToggle.textContent = dark ? '☀️' : '🌙';
+    }
+    themeToggle.onclick = () => applyTheme(!document.body.classList.contains('dark'));
+
+    document.querySelectorAll('.emoji-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.emoji-button').forEach(b => b.classList.remove('ring-2','ring-indigo-400'));
+        btn.classList.add('ring-2','ring-indigo-400');
+        selectedMood = btn.textContent;
+      });
+    });
+
+    function triggerConfetti() {
+      const container = document.getElementById('confetti-container');
+      const emojis = ['🫧','✨','🌸','🌿','💖','🦋'];
+      for (let i = 0; i < 20; i++) {
+        const conf = document.createElement('div');
+        conf.classList.add('confetti');
+        conf.style.left = Math.random() * 100 + 'vw';
+        conf.style.animationDuration = (1.5 + Math.random()) + 's';
+        conf.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        container.appendChild(conf);
+        setTimeout(() => conf.remove(), 2500);
+      }
+    }
+
+    document.getElementById('sendWhisper').addEventListener('click', async () => {
+      const nickname = document.getElementById('nickname').textContent.trim();
+      const message = document.querySelector('textarea').value.trim();
+      if (!selectedMood || !message) {
+        alert("Please select a mood and write your message.");
+        return;
+      }
+      const payload = { nickname, mood: selectedMood, message };
+      try {
+        const res = await fetch('/submitFeeling', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          triggerConfetti();
+          alert("Whisper sent 💌");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong!");
+      }
+    });
+
+    // 🍃 Animated Particles
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const modes = ['dots','glimmers','bubbles'];
+    const mode = modes[Math.floor(Math.random()*modes.length)];
+    let particles = [];
+
+    function Particle(x, y) {
+      this.x = x;
+      this.y = y;
+      this.size = Math.random() * 3 + 1;
+      this.speedX = Math.random() * 1.5 - 0.75;
+      this.speedY = Math.random() * 1.5 - 0.75;
+      this.opacity = Math.random() * 0.4 + 0.3;
+    }
+    Particle.prototype.update = function () {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      this.opacity -= 0.004;
+    };
+    Particle.prototype.draw = function () {
+      if (mode === 'bubbles') {
+        ctx.strokeStyle = `rgba(255,255,255,${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (mode === 'glimmers') {
+        ctx.fillStyle = `rgba(173,216,230,${this.opacity})`;
+        ctx.fillRect(this.x, this.y, 1.5, 1.5);
+      } else {
+        ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    };
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.opacity > 0);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener("mousemove", e => {
+      particles.push(new Particle(e.clientX, e.clientY));
+    });
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      refreshNickname();
+      applyTheme(localStorage.getItem('theme') === 'dark');
+      animateParticles();
+    });
+  </script>
+</body>
+</html>
+<!-- feeling-wall.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Feeling Wall | Mute Talk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Handlee&family=Gloock&display=swap');
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #232939, #1a1e2a);
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #wall {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .title-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      text-align: center;
+    }
+
+    .graffiti {
+      font-family: 'Gloock', serif;
+      font-size: 3.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(to right, #ffffff, #90e0ef);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 12px rgba(255,255,255,0.15);
+    }
+
+    .subtext {
+      font-family: 'Handlee', cursive;
+      font-size: 1.2rem;
+      color: #dcdcdc;
+      opacity: 0.7;
+      margin-top: 0.4rem;
+    }
+
+    .note, .bubble, .foggy, .carousel-msg {
+      position: absolute;
+      min-width: 150px;
+      min-height: 80px;
+      background: #fefefe;
+      color: #222;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .note {
+      animation: floatIn 1.2s ease-out forwards, bob 5s ease-in-out infinite;
+    }
+
+    .note:hover {
+      z-index: 10;
+      transform: scale(1.05) rotate(var(--angle));
+    }
+
+    .meta {
+      font-size: 0.75rem;
+      margin-top: 10px;
+      opacity: 0;
+      color: #555;
+      font-style: italic;
+      transition: opacity 0.3s ease;
+    }
+
+    .note:hover .meta {
+      opacity: 1;
+    }
+
+    @keyframes floatIn {
+      from { transform: translateY(40px) scale(0.85); opacity: 0; }
+      to   { transform: rotate(var(--angle)) scale(1); opacity: 1; }
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: rotate(var(--angle)) translateY(0); }
+      50%      { transform: rotate(var(--angle)) translateY(-4px); }
+    }
+
+    .foggy {
+      animation: fogFade 8s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    @keyframes fogFade {
+      0%   { opacity: 0; transform: scale(0.9); }
+      10%  { opacity: 1; transform: scale(1); }
+      90%  { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.1); }
+    }
+
+    .carousel-msg {
+      position: fixed !important;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      background: #ffffffee;
+      color: #111;
+      width: 80%;
+      max-width: 500px;
+      text-align: center;
+      font-size: 1.3rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.25);
+    }
+
+    .bubble {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fefefe;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      padding: 20px;
+      font-size: 0.9rem;
+      text-align: center;
+      animation: floatBubble 14s ease-in-out infinite;
+      transition: transform 0.3s ease;
+    }
+
+    .bubble:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.15);
+    }
+
+    @keyframes floatBubble {
+      0%   { transform: translateY(0px); }
+      50%  { transform: translateY(-12px); }
+      100% { transform: translateY(0px); }
+    }
+
+    @media (max-width: 768px) {
+      .graffiti { font-size: 2.5rem; }
+      .note, .bubble, .foggy { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Title -->
+  <div class="title-container">
+    <div class="graffiti">Mute Talk</div>
+    <div class="subtext">a place to feel, quietly</div>
+  </div>
+
+  <!-- View Toggle & Auto Mode -->
+  <div class="fixed top-4 right-4 z-50 flex gap-2">
+    <select id="viewToggle" class="bg-white text-black px-2 py-1 rounded shadow">
+      <option value="wall">🧱 Wall</option>
+      <option value="bottle">🫧 Bottle</option>
+      <option value="fog">🌫️ Memory Fog</option>
+      <option value="carousel">💬 Carousel</option>
+    </select>
+    <button id="autoToggle" class="bg-indigo-600 text-white px-3 py-1 rounded shadow hover:bg-indigo-500 transition">
+      🔁 Auto
+    </button>
+  </div>
+
+  <div id="wall"></div>
+
+  <script>
+    const wall = document.getElementById('wall');
+    const views = ['wall', 'bottle', 'fog', 'carousel'];
+    let currentView = localStorage.getItem('selectedView') || 'wall';
+    let autoMode = localStorage.getItem('autoMode') === 'true';
+    let carouselIndex = 0;
+    let carouselTimer = null;
+
+    async function loadWhispers() {
+      try {
+        const res = await fetch('/getWhispers');
+        const data = await res.json();
+        renderView(currentView, data);
+      } catch (e) {
+        console.error("Error loading whispers", e);
+      }
+    }
+
+    function renderView(mode, data) {
+      wall.innerHTML = '';
+      clearInterval(carouselTimer);
+      if (mode === 'wall') {
+        data.forEach(dropNote);
+      } else if (mode === 'bottle') {
+        data.forEach(dropBubble);
+      } else if (mode === 'fog') {
+        data.forEach(dropFog);
+      } else if (mode === 'carousel') {
+        if (data.length > 0) {
+          showCarousel(data);
+          carouselTimer = setInterval(() => {
+            carouselIndex = (carouselIndex + 1) % data.length;
+            showCarousel(data);
+          }, 7000);
+        }
+      }
+    }
+
+    function dropNote(data) {
+      const el = document.createElement('div');
+      el.className = 'note';
+      const angle = `${Math.floor(Math.random() * 10 - 5)}deg`;
+      el.style.setProperty('--angle', angle);
+      el.style.left = Math.random() * (window.innerWidth - 180) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 120) + 'px';
+      el.innerHTML = `
+        ${data.message}
+        <div class="meta">${data.mood || ''} · ${data.nickname || ''}</div>
+      `;
+      wall.appendChild(el);
+    }
+
+    function dropBubble(data) {
+      const el = document.createElement('div');
+      el.className = 'bubble';
+      el.style.left = Math.random() * (window.innerWidth - 150) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+      el.textContent = data.message;
+      wall.appendChild(el);
+    }
+
+    function dropFog(data) {
+      const el = document.createElement('div');
+      el.className = 'foggy';
+      el.style.left = Math.random() * (window.innerWidth - 200) + 'px';
+      el.style.top = Math.random() * (window.innerHeight - 130) + 'px';
+      el.textContent = data.message;
+      wall.appendChild(el);
+    }
+
+    function showCarousel(data) {
+      wall.innerHTML = '';
+      const el = document.createElement('div');
+      el.className = 'carousel-msg';
+      el.textContent = data[carouselIndex].message;
+      wall.appendChild(el);
+    }
+
+    document.getElementById('viewToggle').addEventListener('change', e => {
+      currentView = e.target.value;
+      autoMode = false;
+      localStorage.setItem('selectedView', currentView);
+      localStorage.setItem('autoMode', 'false');
+      loadWhispers();
+    });
+
+    document.getElementById('autoToggle').addEventListener('click', () => {
+      autoMode = !autoMode;
+      localStorage.setItem('autoMode', autoMode.toString());
+      if (autoMode) {
+        const random = views[Math.floor(Math.random() * views.length)];
+        currentView = random;
+        localStorage.setItem('selectedView', random);
+        document.getElementById('viewToggle').value = random;
+      }
+      loadWhispers();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (autoMode) {
+        const random = views[Math.floor(Math.random() * views.length)];
+        currentView = random;
+        localStorage.setItem('selectedView', random);
+      }
+      document.getElementById('viewToggle').value = currentView;
+      loadWhispers();
+    });
+  </script>
+</body>
+</html>

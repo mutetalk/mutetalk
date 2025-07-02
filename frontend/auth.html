@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mute Talk | Begin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: linear-gradient(to bottom, #dfefff, #c3dce6);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .auth-box {
+      background: rgba(255, 255, 255, 0.85);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    input {
+      margin-top: 0.5rem;
+      background: #f9f9f9;
+    }
+
+    .subtle {
+      font-size: 0.85rem;
+      color: #777;
+    }
+
+    .message {
+      color: red;
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-box">
+    <h2 class="text-2xl font-semibold mb-4">✨ Your Identity</h2>
+    <p class="subtle mb-3">Pick a soft nickname and secret code. No one will judge you here.</p>
+
+    <label class="block text-left font-medium text-sm">Nickname</label>
+    <input type="text" id="nickname" class="w-full px-3 py-2 rounded border" />
+
+    <label class="block text-left mt-4 font-medium text-sm">Password</label>
+    <input type="password" id="password" class="w-full px-3 py-2 rounded border" />
+
+    <div id="nicknameMsg" class="message"></div>
+
+    <button onclick="submitAccess()" class="mt-6 w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition">
+      Enter Mute Talk
+    </button>
+
+    <p class="mt-4 subtle">Your identity is yours. We only remember the name you choose.</p>
+  </div>
+
+  <script>
+    const bannedWords = ['kill', 'hate', 'bomb', 'rape', 'die', 'terror', 'death'];
+
+    function generateNickname() {
+      const emojis = ['🌸', '🌿', '🫧', '🌊', '🕊️', '✨'];
+      const adjectives = ['Quiet', 'Gentle', 'Kind', 'Soft', 'Warm', 'Hidden'];
+      const nouns = ['Whisper', 'Breeze', 'River', 'Light', 'Hope', 'Fog'];
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const noun = nouns[Math.floor(Math.random() * nouns.length)];
+      return `${emoji} ${adj} ${noun}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("nickname").value = generateNickname();
+    });
+
+    function containsBannedWord(name) {
+      return bannedWords.some(word => name.toLowerCase().includes(word));
+    }
+
+    function submitAccess() {
+      const name = document.getElementById("nickname").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const msg = document.getElementById("nicknameMsg");
+
+      if (!name || !pass) {
+        msg.textContent = "Both nickname and password are required.";
+        return;
+      }
+
+      if (containsBannedWord(name)) {
+        msg.textContent = "Please choose a more peaceful nickname 🕊️";
+        return;
+      }
+
+      // Save locally — real backend logic can be added later
+      localStorage.setItem("mute_nickname", name);
+      localStorage.setItem("mute_pass", pass);
+      window.location.href = "feelingwall.html"; // or index.html, your choice
+    }
+  </script>
+</body>
+</html>
